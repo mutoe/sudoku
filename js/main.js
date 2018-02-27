@@ -10,8 +10,12 @@ const rand = () => {
 // 数独类
 class Sudoku {
   constructor() {
-    // 盘面
-    this.grids = []
+    // 初始化盘面
+    this.initSudoku()
+  }
+
+  // 初始化盘面
+  initSudoku() {
     // 数独胜利
     this.win = false
     // 数独无解
@@ -23,12 +27,7 @@ class Sudoku {
     // 剩余空格数
     this.emptyCount = 81
 
-    // 初始化盘面
-    this.initSudoku()
-  }
-
-  // 初始化盘面
-  initSudoku () {
+    // 盘面
     this.grids = []
     for (let i = 0; i < 9; i++) {
       this.grids[i] = []
@@ -36,7 +35,71 @@ class Sudoku {
         this.grids[i][j] = new Grid(i, j, null)
       }
     }
-    return this.grids
+
+    return this
+  }
+
+  // 生成一个数独终盘
+  generateSudokuIntact() {
+    do {
+      this.initSudoku()
+
+      // 从数字 1 开始填，1 填完后开始填 2，以此类推
+      for (let k = 1; k <= 9; k++) {
+        // 从第一行开始填，以此类推
+        for (let j = 0; j < 9; j++) {
+          // 每一行从一个随机的位置（列）开始
+          let seed = rand()
+          for (let l = 0; l < 36; l++) {
+            let i = (l + seed) % 9
+            // 如果当前格子不为空 跳过本列
+            if (this.grids[i][j].value !== null) continue
+
+            // 本列允许填入标记
+            let enableFill = true
+
+            // 判断本列待填入数字是否冲突
+            for (let m = 0; m < 9; m++) {
+              if (this.grids[i][m].value == k) {
+                enableFill = false
+                break
+              }
+            }
+
+            // 如果不能填就跳过本列
+            if (!enableFill) continue
+
+            // 判断当前宫待填入数字是否冲突
+            let chunk = Math.floor(j / 3) * 3 + Math.floor(i / 3)  // 位于第几宫 (0-8)
+            let startRow = Math.floor(chunk / 3) * 3
+            let startCol = (chunk % 3) * 3
+            for (let m = startCol; m < startCol + 3; m++) {
+              for (let n = startRow; n < startRow + 3; n++) {
+                if (this.grids[m][n].value == k) {
+                  enableFill = false
+                  break
+                }
+              }
+            }
+
+            // 如果不冲突就填入
+            if (enableFill) {
+              this.grids[i][j].value = k
+              this.emptyCount--
+              break
+            }
+          }
+        }
+      }
+
+      if (this.emptyCount > 0) {
+        this.invalid = true
+      } else {
+        this.invalid = false
+      }
+    } while (this.invalid === true)
+
+    return this
   }
 
   // 检查某格子剩余可填数字
@@ -71,67 +134,23 @@ class Sudoku {
     return result.sort()
   }
 
-  // 生成一个数独终盘
-  generateSudokuIntact() {
-    let startTime = new Date().getTime()
-    // 从数字 1 开始填，1 填完后开始填 2，以此类推
-    for (let k = 1; k <= 9; k++) {
-      // 从第一行开始填，以此类推
+  // 格式化输出当前盘面
+  print() {
+    let data = []
+    for (let i = 0; i < 9; i++) {
+      data[i] = []
       for (let j = 0; j < 9; j++) {
-        // 每一行从一个随机的位置（列）开始
-        let seed = rand()
-        for (let l = 0; l < 9; l++) {
-          let i = (l + seed) % 9
-          // 如果当前格子不为空 跳过本列
-          if (this.grids[i][j].value !== null) continue
-
-          // 本列允许填入标记
-          let enableFill = true
-
-          // 判断本列待填入数字是否冲突
-          for (let m = 0; m < 9; m++) {
-            if (this.grids[i][m].value == k) {
-              enableFill = false
-              break
-            }
-          }
-
-          // 如果不能填就跳过本列
-          if (!enableFill) continue
-
-          // 判断当前宫待填入数字是否冲突
-          let chunk = Math.floor(j / 3) * 3 + Math.floor(i / 3)  // 位于第几宫 (0-8)
-          let startRow = Math.floor(chunk / 3) * 3
-          let startCol = (chunk % 3) * 3
-          for (let m = startCol; m < startCol + 3; m++) {
-            for (let n = startRow; n < startRow + 3; n++) {
-              if (this.grids[m][n].value == k) {
-                enableFill = false
-                break
-              }
-            }
-          }
-
-          // 如果不冲突就填入
-          if (enableFill) {
-            this.grids[i][j].value = k
-            this.emptyCount--
-            break
-          }
-        }
+        if (!this.grids[j][i].value) continue
+        data[i][j] = this.grids[j][i].value
       }
     }
-
-    let during = new Date().getTime() - startTime
-    console.log(`终盘生成完毕，花费 ${during} 毫秒`)
-    if (this.emptyCount > 0) {
-      this.invalid = true
-      console.log(`盘面不可解，剩余 ${this.emptyCount} 个空格无法填入`);
-    } else {
-      this.invalid = false
+    return {
+      win: this.win,
+      invalid: this.invalid,
+      mistakes: this.mistakes,
+      data: data,
     }
 
-    return this.grids
   }
 
 }
@@ -197,12 +216,21 @@ const refresh = (ctx, sudoku) => {
 // 初始化游戏
 const initGame = () => {
   let ctx = setGamearea() // ctx 游戏区 canvas 上下文对象
+
+  let startTime = new Date().getTime()
+
   let sudoku = new Sudoku()  // 实例化一个数独
   sudoku.generateSudokuIntact() // 生成一个终盘
+  console.log(`终盘生成完毕，耗时 ${new Date().getTime() - startTime}ms`)
+
+  startTime = new Date().getTime()
   refresh(ctx, sudoku)
+  console.log(`数独生成完毕，耗时 ${new Date().getTime() - startTime}ms`)
+
+  console.table(sudoku.print().data)
 
   window.MT.sudoku = sudoku
-  console.table(MT)
+  // console.table(MT)
 }
 
 // 入口
