@@ -17,15 +17,15 @@ class Sudoku {
   // 初始化盘面
   initSudoku() {
     // 数独胜利
-    this.win = false
+    this.resolved = false
     // 数独无解
     this.invalid = null
     // 数独有唯一解
     this.uniqueAnswer = null
     // 盘面出错
     this.mistakes = false
-    // 剩余空格数
-    this.emptyCount = 81
+    // 空格坐标 Array<{col: Number, row: Number}>
+    this.emptyGrids = new Array(81)
 
     // 盘面
     this.grids = []
@@ -85,19 +85,34 @@ class Sudoku {
             // 如果不冲突就填入
             if (enableFill) {
               this.grids[i][j].value = k
-              this.emptyCount--
+              this.emptyGrids.pop()
               break
             }
           }
         }
       }
 
-      if (this.emptyCount > 0) {
+      if (this.emptyGrids.length > 0) {
         this.invalid = true
       } else {
         this.invalid = false
       }
     } while (this.invalid === true)
+
+    return this
+  }
+
+  // 从完整数独中扣掉若干空格
+  subtractGrids(count = 36) {
+    if (this.emptyGrids.length > 0) throw Error('无法从残缺盘面执行该方法')
+    for (let i = 0; i < count; i++) {
+      let row, col
+      do {
+        row = rand()
+        col = rand()
+      } while (this.grids[col][row].value === null)
+      this.grids[col][row].value = null
+    }
 
     return this
   }
@@ -145,7 +160,7 @@ class Sudoku {
       }
     }
     return {
-      win: this.win,
+      resolved: this.resolved,
       invalid: this.invalid,
       mistakes: this.mistakes,
       data: data,
@@ -162,6 +177,8 @@ class Grid {
     this.row = row
     this.chunk = Math.floor(row / 3) * 3 + Math.floor(col / 3)  // 位于第几宫 (0-8)
     this.value = value  // 值
+    this.readonly = false // 只读
+    this.removable = true // 允许移除
   }
 
 }
@@ -173,6 +190,8 @@ const setGamearea = () => {
 
   // 获取并设置游戏区域宽高
   let gameareaWidth = screenWidth <= screenHeight ? screenWidth : screenHeight
+
+  if (gameareaWidth > 640) gameareaWidth = 640
 
   const canvas = document.getElementById('gamearea')
   const ctx = canvas.getContext('2d')
@@ -215,22 +234,33 @@ const refresh = (ctx, sudoku) => {
 
 // 初始化游戏
 const initGame = () => {
-  let ctx = setGamearea() // ctx 游戏区 canvas 上下文对象
+  console.time('total')
 
-  let startTime = new Date().getTime()
+  let ctx = setGamearea() // 游戏区 canvas 上下文对象
 
   let sudoku = new Sudoku()  // 实例化一个数独
-  sudoku.generateSudokuIntact() // 生成一个终盘
-  console.log(`终盘生成完毕，耗时 ${new Date().getTime() - startTime}ms`)
 
-  startTime = new Date().getTime()
+  // 生成一个终盘
+  console.time('generate sudoku intact')
+  sudoku.generateSudokuIntact()
+  console.timeEnd('generate sudoku intact')
+
   refresh(ctx, sudoku)
-  console.log(`数独生成完毕，耗时 ${new Date().getTime() - startTime}ms`)
 
-  console.table(sudoku.print().data)
+  // 随机扣掉 20 个数字
+  console.time('subtract grids')
+  sudoku.subtractGrids(10)
+  console.timeEnd('subtract grids')
 
+  refresh(ctx, sudoku)
+
+  console.timeEnd('total')
+
+  refresh(ctx, sudoku)
+
+  // console.table(sudoku.print().data)
   window.MT.sudoku = sudoku
-  // console.table(MT)
+
 }
 
 // 入口

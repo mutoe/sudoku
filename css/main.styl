@@ -18,17 +18,20 @@ body
 body
   display flex
   flex-direction column
-  justify-content space-between
+  justify-content flex-end
+  max-width 640px
+  min-width 360px
+  margin 0 auto
 
 header
   display flex
   flex-direction row
   justify-content space-around
-  height 80px
+  align-items center
+  flex-grow 1
 
   .main-title
     margin 0
-    line-height @height
 
   .info-wrap
     display flex
@@ -38,13 +41,21 @@ header
 #gamearea
   flex-shrink 0
   min-height 360px
+  width 100%
   border 1px solid $color-line
   background $color-light
 
 footer
   display flex
   flex-wrap wrap
+  flex-grow 1.5
+  border 1px solid $color-line
 
   .btn
+    box-sizing contain-box
     width 25%
-    height 60px
+    background transparent
+    color #eee
+    font-size 16px
+    letter-spacing 1px
+    border 1px solid $color-line
