@@ -20,15 +20,19 @@ const rand = () => {
 
 // 数独类
 class Sudoku {
-  constructor() {
+  constructor(shortcut) {
     // 初始化盘面
-    this.initSudoku()
+    this.initSudoku(shortcut)
   }
 
   // 初始化盘面
-  initSudoku() {
+  initSudoku(shortcut) {
+    if (shortcut) shortcut = shortcut.split('')
+
     // 数独胜利
     this.resolved = false
+    // 可以开始解题
+    this.begin = Boolean(shortcut.length)
     // 数独无解
     this.invalid = null
     // 数独有唯一解
@@ -39,11 +43,15 @@ class Sudoku {
     this.emptyGrids = new Array(81)
 
     // 盘面
-    this.grids = []
+    this.grids = new Array(9)
     for (let i = 0; i < 9; i++) {
-      this.grids[i] = []
-      for (let j = 0; j < 9; j++) {
-        this.grids[i][j] = new Grid(i, j, null)
+      this.grids[i] = new Array(9)
+    }
+    for (let j = 0; j < 9; j++) {
+      for (let i = 0; i < 9; i++) {
+        let value = 0
+        if (shortcut.length) value = shortcut.shift()
+        this.grids[i][j] = new Grid(i, j, value - 0 || null)
       }
     }
 
@@ -52,6 +60,7 @@ class Sudoku {
 
   // 生成一个数独终盘
   generateSudokuIntact() {
+    if (this.begin) return this
     do {
       this.initSudoku()
 
@@ -115,6 +124,7 @@ class Sudoku {
 
   // 从完整数独中扣掉若干空格
   subtractGrids(count = 36) {
+    if (this.begin) return this
     if (this.emptyGrids.length > 0) throw Error('无法从残缺盘面执行该方法')
     for (let i = 0; i < count; i++) {
       let row, col
@@ -163,18 +173,24 @@ class Sudoku {
   // 格式化输出当前盘面
   print() {
     let data = []
+    let shortcut = ''
     for (let i = 0; i < 9; i++) {
       data[i] = []
       for (let j = 0; j < 9; j++) {
-        if (!this.grids[j][i].value) continue
-        data[i][j] = this.grids[j][i].value
+        if (!this.grids[j][i].value) {
+          shortcut += '.'
+        } else {
+          shortcut += this.grids[j][i].value.toString()
+          data[i][j] = this.grids[j][i].value
+        }
       }
     }
     return {
       resolved: this.resolved,
       invalid: this.invalid,
       mistakes: this.mistakes,
-      data: data,
+      shortcut,
+      data,
     }
 
   }
@@ -249,7 +265,8 @@ const initGame = () => {
 
   let ctx = setGamearea() // 游戏区 canvas 上下文对象
 
-  let sudoku = new Sudoku()  // 实例化一个数独
+  const shortcut = '356.7.9414815.9273279314568647182.959.263578453849.126793.4.65286572341.124.56837'
+  let sudoku = new Sudoku(shortcut)  // 实例化一个数独
 
   // 生成一个终盘
   console.time('generate sudoku intact')
@@ -270,7 +287,7 @@ const initGame = () => {
 
   refresh(ctx, sudoku)
 
-  // console.table(sudoku.print().data)
+  console.table(sudoku.print())
   window.MT.sudoku = sudoku
 
 }
