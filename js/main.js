@@ -2,9 +2,20 @@
 // 调试用全局变量
 window.MT = {}
 
+// 随机数种子
+MT.random = function(seed) {
+  if (typeof seed !== 'number') return Math.random()
+  else {
+    seed = Math.sin(seed) * 10000
+    return seed - Math.floor(seed)
+  }
+}
+
 // 快捷方法 随机生成一个 0 - 8 的数
 const rand = () => {
-  return Math.floor(Math.random() * 9 )
+  if (!MT.seed) MT.seed = Math.random()
+  MT.seed = MT.random(MT.seed)
+  return Math.floor(MT.random(MT.seed) * 9 )
 }
 
 // 数独类
@@ -242,6 +253,7 @@ const initGame = () => {
 
   // 生成一个终盘
   console.time('generate sudoku intact')
+  MT.seed = 1 // 使用种子生成一个终盘
   sudoku.generateSudokuIntact()
   console.timeEnd('generate sudoku intact')
 
