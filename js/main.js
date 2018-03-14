@@ -1,21 +1,21 @@
+/* global LinkedMatrix, DLX, MT */
 
 // 调试用全局变量
-window.MT = {}
-
-// 随机数种子
-MT.random = function(seed) {
-  if (typeof seed !== 'number') return Math.random()
-  else {
-    seed = Math.sin(seed) * 10000
-    return seed - Math.floor(seed)
-  }
-}
-
-// 快捷方法 随机生成一个 0 - 8 的数
-const rand = () => {
-  if (!MT.seed) MT.seed = Math.random()
-  MT.seed = MT.random(MT.seed)
-  return Math.floor(MT.random(MT.seed) * 9 )
+window.MT = {
+  // 随机数种子
+  random(seed) {
+    if (typeof seed !== 'number') return Math.random()
+    else {
+      seed = Math.sin(seed) * 10000
+      return seed - Math.floor(seed)
+    }
+  },
+  // 快捷方法 随机生成一个 0 - 8 的数
+  rand() {
+    if (!MT.seed) MT.seed = Math.random()
+    MT.seed = MT.random(MT.seed)
+    return Math.floor(MT.random(MT.seed) * 9 )
+  },
 }
 
 // 数独类
@@ -32,7 +32,7 @@ class Sudoku {
     // 数独胜利
     this.resolved = false
     // 可以开始解题
-    this.begin = Boolean(shortcut.length)
+    this.begin = !!shortcut
     // 数独无解
     this.invalid = null
     // 数独有唯一解
@@ -50,7 +50,7 @@ class Sudoku {
     for (let j = 0; j < 9; j++) {
       for (let i = 0; i < 9; i++) {
         let value = 0
-        if (shortcut.length) value = shortcut.shift()
+        if (shortcut && shortcut.length) value = shortcut.shift()
         this.grids[i][j] = new Grid(i, j, value - 0 || null)
       }
     }
@@ -69,7 +69,7 @@ class Sudoku {
         // 从第一行开始填，以此类推
         for (let j = 0; j < 9; j++) {
           // 每一行从一个随机的位置（列）开始
-          let seed = rand()
+          let seed = MT.rand()
           for (let l = 0; l < 36; l++) {
             let i = (l + seed) % 9
             // 如果当前格子不为空 跳过本列
@@ -129,8 +129,8 @@ class Sudoku {
     for (let i = 0; i < count; i++) {
       let row, col
       do {
-        row = rand()
-        col = rand()
+        row = MT.rand()
+        col = MT.rand()
       } while (this.grids[col][row].value === null)
       this.grids[col][row].value = null
     }
@@ -168,6 +168,56 @@ class Sudoku {
     // 返回所有可填数字
     let result = [...new Set(existNums)]
     return result.sort()
+  }
+
+  /**
+   * 求解数独
+   * 将数独问题转化为求解精确覆盖的问题 从而使用 DLX 算法进行高效求解
+   */
+  solve() {
+    let sparse = to_sparse(this)
+    let lm = new LinkedMatrix().from_sparse(sparse)
+    let result = DLX.solve_linked_matrix(lm)
+    MT.linkedMatrix = lm
+
+    /**
+     * 根据数独生成密集表示法的 0,1 矩阵
+     *
+     * 遍历数独的每格, 如果读取到数字, 在矩阵中增加一行, 表示填写数字 n
+     * 如果没有读取到空格, 则增加 9 行, 表示 1-9 都试一试
+     * 每行有 81 * 4 列, 第一个 81 列表示第 y 行第 x 列有数字
+     * 第二个 81 列表示第 x 列填 n, 第三个 81 列表示第 y 行填 n
+     * 最后 81 列表示第 c 宫填 n
+     *
+     * @return {number[][]}  0,1 矩阵
+     */
+    function to_sparse(sudoku) {
+      let sparse = []
+      for (let y = 0; y < 9; y++) {
+        for (let x = 0; x < 9; x++) {
+          let c = sudoku.grids[x][y].chunk
+          if (sudoku.grids[x][y].value) {
+            let row = []
+            let n = sudoku.grids[x][y].value - 1
+            row.push(0 * 81 + y * 9 + x)
+            row.push(1 * 81 + x * 9 + n)
+            row.push(2 * 81 + y * 9 + n)
+            row.push(3 * 81 + c * 9 + n)
+            sparse.push(row)
+          } else {
+            for (let n = 0; n < 9; n++) {
+              let row = []
+              row.push(0 * 81 + y * 9 + x)
+              row.push(1 * 81 + x * 9 + n)
+              row.push(2 * 81 + y * 9 + n)
+              row.push(3 * 81 + c * 9 + n)
+              sparse.push(row)
+            }
+          }
+        }
+      }
+      return sparse
+    }
   }
 
   // 格式化输出当前盘面
