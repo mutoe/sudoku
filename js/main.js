@@ -27,7 +27,12 @@ class Sudoku {
 
   // 初始化盘面
   initSudoku(shortcut) {
-    if (shortcut) shortcut = shortcut.split('')
+    if (shortcut) {
+      if (shortcut.length !== 81) throw new RangeError('快捷方式不是一个有效的字符串')
+      shortcut = shortcut.split('')
+    } else {
+      shortcut = undefined
+    }
 
     // 数独胜利
     this.resolved = false
@@ -50,7 +55,7 @@ class Sudoku {
     for (let j = 0; j < 9; j++) {
       for (let i = 0; i < 9; i++) {
         let value = 0
-        if (shortcut && shortcut.length) value = shortcut.shift()
+        if (shortcut) value = shortcut.shift()
         this.grids[i][j] = new Grid(i, j, value - 0 || null)
       }
     }
@@ -171,52 +176,61 @@ class Sudoku {
   }
 
   /**
-   * 求解数独
-   * 将数独问题转化为求解精确覆盖的问题 从而使用 DLX 算法进行高效求解
+   * 根据数独生成密集表示法的 0,1 矩阵
+   *
+   * @return {number[][]}  0,1 矩阵
    */
-  solve() {
-    let sparse = to_sparse(this)
-    let lm = new LinkedMatrix().from_sparse(sparse)
-    let result = DLX.solve_linked_matrix(lm)
-    MT.linkedMatrix = lm
-
-    /**
-     * 根据数独生成密集表示法的 0,1 矩阵
-     *
-     * 遍历数独的每格, 如果读取到数字, 在矩阵中增加一行, 表示填写数字 n
-     * 如果没有读取到空格, 则增加 9 行, 表示 1-9 都试一试
-     * 每行有 81 * 4 列, 第一个 81 列表示第 y 行第 x 列有数字
-     * 第二个 81 列表示第 x 列填 n, 第三个 81 列表示第 y 行填 n
-     * 最后 81 列表示第 c 宫填 n
-     *
-     * @return {number[][]}  0,1 矩阵
-     */
-    function to_sparse(sudoku) {
-      let sparse = []
-      for (let y = 0; y < 9; y++) {
-        for (let x = 0; x < 9; x++) {
-          let c = sudoku.grids[x][y].chunk
-          if (sudoku.grids[x][y].value) {
+  toSparse() {
+    let sparse = []
+    // 遍历数独的每格
+    for (let y = 0; y < 9; y++) {
+      for (let x = 0; x < 9; x++) {
+        let c = this.grids[x][y].chunk // 用索引 0-8 表示 1-9 宫
+        if (this.grids[x][y].value) {
+          // 如果读取到数字, 在矩阵中增加一行, 表示填写数字 n
+          let row = []
+          let n = this.grids[x][y].value - 1 // 用索引 0-8 表示数字 1-9
+          row.push(0 * 81 + y * 9 + x)  // 第 y 行第 x 列有数字
+          row.push(1 * 81 + x * 9 + n)  // 第 x 列填 n
+          row.push(2 * 81 + y * 9 + n)  // 第 y 行填 n
+          row.push(3 * 81 + c * 9 + n)  // 第 c 宫填 n
+          sparse.push(row)
+        } else {
+          // 如果没有读取到空格, 则增加 9 行, 表示 1-9 都试一试
+          for (let n = 0; n < 9; n++) {
             let row = []
-            let n = sudoku.grids[x][y].value - 1
             row.push(0 * 81 + y * 9 + x)
             row.push(1 * 81 + x * 9 + n)
             row.push(2 * 81 + y * 9 + n)
             row.push(3 * 81 + c * 9 + n)
             sparse.push(row)
-          } else {
-            for (let n = 0; n < 9; n++) {
-              let row = []
-              row.push(0 * 81 + y * 9 + x)
-              row.push(1 * 81 + x * 9 + n)
-              row.push(2 * 81 + y * 9 + n)
-              row.push(3 * 81 + c * 9 + n)
-              sparse.push(row)
-            }
           }
         }
       }
-      return sparse
+    }
+    return sparse
+  }
+
+  /**
+   * 求解数独
+   * 将数独问题转化为求解精确覆盖的问题 从而使用 DLX 算法进行高效求解
+   */
+  solve() {
+    let sparse = this.toSparse()
+    let lm = new LinkedMatrix().from_sparse(sparse)
+    let result = DLX.solve_linked_matrix(lm)
+    if (result.length === 1) {
+      this.resolved = true
+      this.uniqueAnswer = true
+      console.log('Resolved.')
+    } else if (result.length > 1) {
+      this.resoved = false
+      this.uniqueAnswer = false
+      console.log('Resolved. But not unique answer.')
+    } else {
+      this.resolved = false
+      this.invalid = true
+      console.log('This is invalid sudoku.')
     }
   }
 
@@ -260,89 +274,104 @@ class Grid {
 
 }
 
-// 设置游戏区域大小
-const setGamearea = () => {
-  let screenWidth = window.screen.width
-  let screenHeight = window.screen.height
+class Game {
+  constructor(canvas) {
+    this.canvas = canvas
+    this.ctx = this.canvas.getContext('2d')
+    this.screenWidth = undefined
+    this.gridWidth = undefined
+  }
 
-  // 获取并设置游戏区域宽高
-  let gameareaWidth = screenWidth <= screenHeight ? screenWidth : screenHeight
 
-  if (gameareaWidth > 640) gameareaWidth = 640
+  // 设置游戏区域大小
+  setGamearea() {
+    let screenWidth = window.screen.width
+    let screenHeight = window.screen.height
 
-  const canvas = document.getElementById('gamearea')
-  const ctx = canvas.getContext('2d')
+    // 获取并设置游戏区域宽高
+    let gameareaWidth = screenWidth <= screenHeight ? screenWidth : screenHeight
 
-  canvas.width = gameareaWidth
-  canvas.height = gameareaWidth
+    if (gameareaWidth > 640) gameareaWidth = 640
 
-  window.MT.screenWidth = gameareaWidth
-  window.MT.gridWidth = Math.floor(gameareaWidth / 9)
+    this.canvas.width = gameareaWidth
+    this.canvas.height = gameareaWidth
 
-  return ctx
-}
+    this.screenWidth = gameareaWidth
+    this.gridWidth = Math.floor(gameareaWidth / 9)
 
-// 刷新画面
-const refresh = (ctx, sudoku) => {
+    return this
+  }
 
-  const width = window.MT.gridWidth
-  const fontSize = window.MT.gridWidth / 2
-  ctx.font = `${fontSize}px san-serif`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
+  // 刷新画面
+  refresh() {
 
-  for (let i = 0; i < 9; i++) {
-    for (let j = 0; j < 9; j++) {
-      // 绘制边线
-      ctx.strokeRect(i * width, j * width, width, width)
+    const width = this.gridWidth
+    const fontSize = this.gridWidth / 2
+    this.ctx.font = `${fontSize}px san-serif`
+    this.ctx.textAlign = 'center'
+    this.ctx.textBaseline = 'middle'
 
-      // 填充色
-      ctx.fillStyle = Math.floor(i / 3) % 2  == Math.floor(j / 3) % 2 ? '#eee' : '#ddd'
-      ctx.fillRect(i * width, j * width, width, width)
+    for (let i = 0; i < 9; i++) {
+      for (let j = 0; j < 9; j++) {
+        // 绘制边线
+        this.ctx.strokeRect(i * width, j * width, width, width)
 
-      // 绘制数字
-      if (sudoku.grids[i][j].value !== null) {
-        ctx.fillStyle = '#282828'
-        ctx.fillText(sudoku.grids[i][j].value, i * width + (width / 2), j * width + (width / 2), width)
+        // 填充色
+        this.ctx.fillStyle = Math.floor(i / 3) % 2  == Math.floor(j / 3) % 2 ? '#eee' : '#ddd'
+        this.ctx.fillRect(i * width, j * width, width, width)
+
+        // 绘制数字
+        if (this.sudoku.grids[i][j].value !== null) {
+          this.ctx.fillStyle = '#282828'
+          this.ctx.fillText(this.sudoku.grids[i][j].value, i * width + (width / 2), j * width + (width / 2), width)
+        }
       }
     }
   }
-}
 
-// 初始化游戏
-const initGame = () => {
-  console.time('total')
+  // 初始化游戏
+  init(options) {
+    console.time('total')
 
-  let ctx = setGamearea() // 游戏区 canvas 上下文对象
+    this.setGamearea()
 
-  const shortcut = '356.7.9414815.9273279314568647182.959.263578453849.126793.4.65286572341.124.56837'
-  let sudoku = new Sudoku(shortcut)  // 实例化一个数独
+    this.sudoku = new Sudoku(options.shortcut)  // 实例化一个数独
 
-  // 生成一个终盘
-  console.time('generate sudoku intact')
-  MT.seed = 1 // 使用种子生成一个终盘
-  sudoku.generateSudokuIntact()
-  console.timeEnd('generate sudoku intact')
+    // 生成一个终盘
+    console.time('generate sudoku intact')
+    this.seed = MT.seed = options.seed
+    this.sudoku.generateSudokuIntact()
+    console.timeEnd('generate sudoku intact')
 
-  refresh(ctx, sudoku)
+    this.refresh()
 
-  // 随机扣掉 20 个数字
-  console.time('subtract grids')
-  sudoku.subtractGrids(10)
-  console.timeEnd('subtract grids')
+    // 随机扣掉数字
+    console.time('subtract grids')
+    this.sudoku.subtractGrids(options.empty)
+    console.timeEnd('subtract grids')
 
-  refresh(ctx, sudoku)
+    this.refresh()
 
-  console.timeEnd('total')
+    console.time('solve sudoku')
+    this.sudoku.solve()
+    console.timeEnd('solve sudoku')
 
-  refresh(ctx, sudoku)
+    console.timeEnd('total')
 
-  console.table(sudoku.print())
-  window.MT.sudoku = sudoku
+    console.table(this.sudoku.print())
+
+    return this
+  }
 
 }
 
 // 入口
 $(document).ready(() => {
-  initGame()
+  let canvas = document.getElementById('gamearea')
+  let game = new Game(canvas)
+  game.init({
+    shortcut: '',   // 使用快捷方法生成数独
+    seed: 2,        // 随机生成一个数独并使用种子
+    empty: 20,      // 随机扣去空格数
+  })
 })
