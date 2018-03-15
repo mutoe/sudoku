@@ -285,19 +285,21 @@ class Game {
 
   // 设置游戏区域大小
   setGamearea() {
-    let screenWidth = window.screen.width
-    let screenHeight = window.screen.height
+    let screenWidth = document.body.clientWidth
+    let screenHeight = document.body.clientHeight
 
     // 获取并设置游戏区域宽高
     let gameareaWidth = screenWidth <= screenHeight ? screenWidth : screenHeight
 
     if (gameareaWidth > 640) gameareaWidth = 640
 
+    gameareaWidth *= 1.4 // canvas 边框修正
+
     this.canvas.width = gameareaWidth
     this.canvas.height = gameareaWidth
 
     this.screenWidth = gameareaWidth
-    this.gridWidth = Math.floor(gameareaWidth / 9)
+    this.gridWidth = gameareaWidth / 9
 
     return this
   }
@@ -306,7 +308,7 @@ class Game {
   refresh() {
 
     const width = this.gridWidth
-    const fontSize = this.gridWidth / 2
+    const fontSize = Math.floor(this.gridWidth / 2)
     this.ctx.font = `${fontSize}px san-serif`
     this.ctx.textAlign = 'center'
     this.ctx.textBaseline = 'middle'
