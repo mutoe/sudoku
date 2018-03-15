@@ -95,7 +95,7 @@ class Sudoku {
             if (!enableFill) continue
 
             // 判断当前宫待填入数字是否冲突
-            let chunk = Math.floor(j / 3) * 3 + Math.floor(i / 3)  // 位于第几宫 (0-8)
+            let chunk = new Grid().getChunk(i, j)  // 位于第几宫 (0-8)
             let startRow = Math.floor(chunk / 3) * 3
             let startCol = (chunk % 3) * 3
             for (let m = startCol; m < startCol + 3; m++) {
@@ -117,6 +117,7 @@ class Sudoku {
         }
       }
 
+      // 如果填到最后还有空格 说明终盘生成失败
       if (this.emptyGrids.length > 0) {
         this.invalid = true
       } else {
@@ -127,16 +128,23 @@ class Sudoku {
     return this
   }
 
-  // 从完整数独中扣掉若干空格
+  /**
+   * 从完整数独中扣掉若干空格
+   * @param  {number} [count=36] 需要挖去的格子数
+   */
   subtractGrids(count = 36) {
+    // 如果游戏已经开始 则不能再扣取
     if (this.begin) return this
     if (this.emptyGrids.length > 0) throw Error('无法从残缺盘面执行该方法')
     for (let i = 0; i < count; i++) {
       let row, col
+      // 随机选格子 直到选中一个非空格
       do {
         row = MT.rand()
         col = MT.rand()
       } while (this.grids[col][row].value === null)
+
+      // 挖去该格
       this.grids[col][row].value = null
     }
 
@@ -159,7 +167,7 @@ class Sudoku {
       }
     }
     // 检查当前宫
-    let chunk = Math.floor(row / 3) * 3 + Math.floor(col / 3)  // 位于第几宫 (0-8)
+    let chunk = new Grid().getChunk(col, row)  // 位于第几宫 (0-8)
     let startRow = Math.floor(chunk / 3) * 3
     let startCol = (chunk % 3) * 3
     for (let i = startCol; i < startCol + 3; i++) {
@@ -266,10 +274,20 @@ class Grid {
   constructor(col, row, value) {
     this.col = col
     this.row = row
-    this.chunk = Math.floor(row / 3) * 3 + Math.floor(col / 3)  // 位于第几宫 (0-8)
+    this.chunk = this.getChunk(col, row)
     this.value = value  // 值
     this.readonly = false // 只读
     this.removable = true // 允许移除
+  }
+
+  /**
+   * 获取当前坐标所在宫格 0-8
+   * @param  {number} col 目标格所在列
+   * @param  {number} row 目标格所在行
+   * @return {number}     返回所在宫格
+   */
+  getChunk(col, row) {
+    return Math.floor(row / 3) * 3 + Math.floor(col / 3)  // 位于第几宫 (0-8)
   }
 
 }
