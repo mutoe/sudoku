@@ -12,6 +12,7 @@
   <script src="js/main.js" charset="utf-8"></script>
 </head>
 <body>
+  <p id="debug" style="margin: 0;height: 24px;overflow: visible;">debug: </p>
   <header>
     <h1 class="main-title">数独</h1>
     <div class="info-wrap">
@@ -20,7 +21,10 @@
     </div>
   </header>
 
-  <canvas id="gamearea"></canvas>
+  <section id="gamearea">
+    <canvas class="dat-layer"></canvas>
+    <canvas class="act-layer"></canvas>
+  </section>
 
   <footer>
     <button class="btn">撤销</button>

@@ -293,11 +293,18 @@ class Grid {
 }
 
 class Game {
-  constructor(canvas) {
-    this.canvas = canvas
-    this.ctx = this.canvas.getContext('2d')
+  constructor(wrap) {
+    this.wrap = wrap
+    MT.wrap = wrap
     this.screenWidth = undefined
     this.gridWidth = undefined
+    this.ratio = 1.4  // canvas 放大倍率
+
+    this.touch = {x: null, y: null}
+
+    this.wrap.addEventListener('touchmove', this.onTouchMove.bind(this), false)
+    this.wrap.addEventListener('touchstart', this.onTouchMove.bind(this), false)
+    this.wrap.addEventListener('touchend', this.onTouchEnd.bind(this), false)
   }
 
 
@@ -308,13 +315,21 @@ class Game {
 
     // 获取并设置游戏区域宽高
     let gameareaWidth = screenWidth <= screenHeight ? screenWidth : screenHeight
-
     if (gameareaWidth > 640) gameareaWidth = 640
 
-    gameareaWidth *= 1.4 // canvas 边框修正
+    this.wrap.style.width = this.wrap.style.height = gameareaWidth + 'px'
 
-    this.canvas.width = gameareaWidth
-    this.canvas.height = gameareaWidth
+    gameareaWidth *= this.ratio // canvas 边框修正
+
+    // 数据层
+    this.datLayer = this.wrap.getElementsByClassName('dat-layer')[0]
+    this.datLayer.width = this.datLayer.height = gameareaWidth
+    this.datCtx = this.datLayer.getContext('2d')
+
+    // 交互层
+    this.actLayer = this.wrap.getElementsByClassName('act-layer')[0]
+    this.actLayer.width = this.actLayer.height = gameareaWidth
+    this.actCtx = this.actLayer.getContext('2d')
 
     this.screenWidth = gameareaWidth
     this.gridWidth = gameareaWidth / 9
@@ -322,28 +337,29 @@ class Game {
     return this
   }
 
-  // 刷新画面
-  refresh() {
-
+  /**
+   * 绘制数据层
+   */
+  drawDataLayer() {
     const width = this.gridWidth
     const fontSize = Math.floor(this.gridWidth / 2)
-    this.ctx.font = `${fontSize}px san-serif`
-    this.ctx.textAlign = 'center'
-    this.ctx.textBaseline = 'middle'
+    this.datCtx.font = `${fontSize}px san-serif`
+    this.datCtx.textAlign = 'center'
+    this.datCtx.textBaseline = 'middle'
 
     for (let i = 0; i < 9; i++) {
       for (let j = 0; j < 9; j++) {
         // 绘制边线
-        this.ctx.strokeRect(i * width, j * width, width, width)
+        this.datCtx.strokeRect(i * width, j * width, width, width)
 
         // 填充色
-        this.ctx.fillStyle = Math.floor(i / 3) % 2  == Math.floor(j / 3) % 2 ? '#eee' : '#ddd'
-        this.ctx.fillRect(i * width, j * width, width, width)
+        this.datCtx.fillStyle = Math.floor(i / 3) % 2  == Math.floor(j / 3) % 2 ? '#eee' : '#ddd'
+        this.datCtx.fillRect(i * width, j * width, width, width)
 
         // 绘制数字
         if (this.sudoku.grids[i][j].value !== null) {
-          this.ctx.fillStyle = '#282828'
-          this.ctx.fillText(this.sudoku.grids[i][j].value, i * width + (width / 2), j * width + (width / 2), width)
+          this.datCtx.fillStyle = '#282828'
+          this.datCtx.fillText(this.sudoku.grids[i][j].value, i * width + (width / 2), j * width + (width / 2), width)
         }
       }
     }
@@ -363,14 +379,14 @@ class Game {
     this.sudoku.generateSudokuIntact()
     console.timeEnd('generate sudoku intact')
 
-    this.refresh()
+    this.drawDataLayer()
 
     // 随机扣掉数字
     console.time('subtract grids')
     this.sudoku.subtractGrids(options.empty)
     console.timeEnd('subtract grids')
 
-    this.refresh()
+    this.drawDataLayer()
 
     console.time('solve sudoku')
     this.sudoku.solve()
@@ -383,12 +399,32 @@ class Game {
     return this
   }
 
+  onTouchMove(event) {
+    this.actCtx.clearRect(0, 0, this.actLayer.height, this.actLayer.height)
+    let touch = event.touches[0]
+    let x = touch.pageX * this.ratio
+    let y = (touch.pageY - this.wrap.offsetTop) * this.ratio
+    this.touch = {x, y}
+    this.actCtx.beginPath()
+    this.actCtx.arc(x, y, 10, 0, 2 * Math.PI, true)
+    this.actCtx.fill()
+    this.actCtx.closePath()
+    // console.log(touch)
+  }
+
+  onTouchEnd() {
+    console.log(this.touch)
+    let x = Math.floor(this.touch.x / this.gridWidth)
+    let y = Math.floor(this.touch.y / this.gridWidth)
+    $('#debug').text(`x: ${x}, y: ${y}`)
+  }
+
 }
 
 // 入口
 $(document).ready(() => {
-  let canvas = document.getElementById('gamearea')
-  let game = new Game(canvas)
+  let wrap = document.getElementById('gamearea')
+  let game = new Game(wrap)
   game.init({
     shortcut: '',   // 使用快捷方法生成数独
     seed: 2,        // 随机生成一个数独并使用种子
