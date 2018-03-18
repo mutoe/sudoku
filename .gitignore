@@ -1,4 +1,12 @@
-/node_modules
+
+# IDE
 /.vscode
 
+# 包管理器
+/node_modules
+
+# 发布目录
+/dist
+
+# 日志
 *.log

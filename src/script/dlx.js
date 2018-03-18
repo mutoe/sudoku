@@ -1,5 +1,10 @@
 
-// 十字链表节点
+/**
+ * 十字链表的节点
+ * 每个节点含有 x \ y 坐标, 当前列含有的节点数,
+ * 上下左右指针
+ * @class
+ */
 class Node {
   /**
    * @constructor
@@ -68,6 +73,10 @@ class Node {
   }
 }
 
+/**
+ * 十字链表类
+ * 由根节点(Node: root), 列头节点(Node[]: cols)和子节点(Node: node)构成
+ */
 class LinkedMatrix {
   /**
    * 十字链表
@@ -77,7 +86,7 @@ class LinkedMatrix {
     // 根节点
     this.root = new Node(-1, -1)
 
-    // 剩余列节点 Array<Node>
+    // 剩余列节点
     this.cols = []
   }
 
@@ -194,65 +203,65 @@ class LinkedMatrix {
 
 }
 
-// DLX 核心
-let DLX = {
+/**
+ * 求解
+ * @param  {LinkedMatrix} lm  十字链表实例
+ * @return {Number[][]}       结果
+ */
+let solve_linked_matrix = (lm) => {
+  if (!(lm instanceof LinkedMatrix)) throw new TypeError('Argument is not a LinkedMatrix')
+  let solutions = []
+  dance(lm, [], solutions)
+  return solutions
+}
 
-  /**
-   * 求解
-   * @param  {LinkedMatrix} lm  十字链表实例
-   * @return {Number[][]}       结果
-   */
-  solve_linked_matrix(lm) {
-    if (!(lm instanceof LinkedMatrix)) throw new TypeError('Argument is not a LinkedMatrix')
-    let solutions = []
-    DLX.dance(lm, [], solutions)
-    return solutions
-  },
+/**
+ * dance
+ * @param  {LinkedMatrix} lm      十字链表实例
+ * @param  {Number[]} stack       答案栈
+ * @param  {Number[][]} solutions 最优解数组
+ */
+let dance = (lm, stack, solutions) => {
+  if (lm == null) return []
+  if (lm.root.r === lm.root) {
+    solutions.push([].concat(stack).sort((a, b) => a - b))
+    return
+  }
 
+  // 找到列节点数最小的一列
+  let best_col = lm.root.r
+  for (let col = best_col.r; col !== lm.root; col = col.r) {
+    if (col.size < best_col.size) best_col = col
+  }
 
-  /**
-   * dance
-   * @param  {LinkedMatrix} lm      十字链表实例
-   * @param  {Number[]} stack       答案栈
-   * @param  {Number[][]} solutions 最优解数组
-   */
-  dance (lm, stack, solutions) {
-    if (lm == null) return []
-    if (lm.root.r === lm.root) {
-      solutions.push([].concat(stack).sort((a, b) => a - b))
-      return
+  // 如果列节点数都为 0, 求解失败, 返回答案
+  if (best_col.size < 1) return solutions
+
+  // 隐藏该列以及相关行
+  lm.cover_column(best_col)
+
+  for (let row = best_col.d; row !== best_col; row = row.d) {
+    // 将当前行号压入答案栈
+    stack.push(row.y)
+
+    // 移除以解决的行及对应列
+    for (let node = row.r; node !== row; node = node.r) {
+      lm.cover_column(node.x)
     }
 
-    // 找到列节点数最小的一列
-    let best_col = lm.root.r
-    for (let col = best_col.r; col !== lm.root; col = col.r) {
-      if (col.size < best_col.size) best_col = col
+    // 递归求解新的十字链表
+    dance(lm, stack, solutions)
+
+    // 还原
+    for (let node = row.l; node !== row; node = node.l) {
+      lm.uncover_column(node.x)
     }
+    stack.pop()
+  }
+  lm.uncover_column(best_col)
+}
 
-    // 如果列节点数都为 0, 求解失败, 返回答案
-    if (best_col.size < 1) return solutions
-
-    // 隐藏该列以及相关行
-    lm.cover_column(best_col)
-
-    for (let row = best_col.d; row !== best_col; row = row.d) {
-      // 将当前行号压入答案栈
-      stack.push(row.y)
-
-      // 移除以解决的行及对应列
-      for (let node = row.r; node !== row; node = node.r) {
-        lm.cover_column(node.x)
-      }
-
-      // 递归求解新的十字链表
-      DLX.dance(lm, stack, solutions)
-
-      // 还原
-      for (let node = row.l; node !== row; node = node.l) {
-        lm.uncover_column(node.x)
-      }
-      stack.pop()
-    }
-    lm.uncover_column(best_col)
-  },
+export default {
+  LinkedMatrix,
+  solve_linked_matrix,
 }
