@@ -143,6 +143,11 @@ const Main = () => {
       seed: 2, // 随机生成一个数独并使用种子
       empty: 20 // 随机扣去空格数
     })
+
+    $(window).on('resize', () => {
+      game.setGamearea()
+      game.drawDataLayer()
+    })
   })
 }
 
