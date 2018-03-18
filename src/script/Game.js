@@ -9,7 +9,7 @@ class Game {
     // 小格宽度
     this.gridWidth = undefined
     // canvas 放大倍率 用于提高分辨率
-    this.ratio = 1.4
+    this.ratio = Math.PI / 2
 
     // 触摸坐标
     this.touch = { x: null, y: null, row: null, col: null, start: 0, end: 0 }
@@ -17,51 +17,52 @@ class Game {
     this.inAction = false
 
     // 交互监听
-    this.wrap.addEventListener('touchmove', onTouchMove.bind(this), false)
-    this.wrap.addEventListener('touchstart', onTouchMove.bind(this), false)
-    this.wrap.addEventListener('touchend', onTouchEnd.bind(this), false)
+    this.wrap.addEventListener('touchmove', this.onTouchMove.bind(this), false)
+    this.wrap.addEventListener('touchstart', this.onTouchMove.bind(this), false)
+    this.wrap.addEventListener('touchend', this.onTouchEnd.bind(this), false)
+  }
 
-    function onTouchMove(event) {
-      this.touch.start = new Date().getTime()
-      this.actCtx.clearRect(0, 0, this.actLayer.height, this.actLayer.height)
-      let touch = event.touches[0]
-      let x = touch.pageX * this.ratio
-      let y = (touch.pageY - this.wrap.offsetTop) * this.ratio
-      this.touch.x = x
-      this.touch.y = y
+  onTouchMove(event) {
+    event.preventDefault()
+    this.touch.start = new Date().getTime()
+    this.actCtx.clearRect(0, 0, this.actLayer.height, this.actLayer.height)
+    let touch = event.touches[0]
+    let x = touch.pageX * this.ratio
+    let y = (touch.pageY - this.wrap.offsetTop) * this.ratio
+    this.touch.x = x
+    this.touch.y = y
 
-      // 测试用标点
-      this.actCtx.beginPath()
-      this.actCtx.arc(x, y, 10, 0, 2 * Math.PI, true)
-      this.actCtx.fill()
-      this.actCtx.closePath()
-    }
+    // 测试用标点
+    this.actCtx.beginPath()
+    this.actCtx.arc(x, y, 10, 0, 2 * Math.PI, true)
+    this.actCtx.fill()
+    this.actCtx.closePath()
+  }
 
-    function onTouchEnd() {
-      this.touch.end = new Date().getTime()
-      console.log(this.touch)
+  onTouchEnd() {
+    this.touch.end = new Date().getTime()
+    console.log(this.touch)
 
-      if (!this.inAction) {
-        let col = Math.floor(this.touch.x / this.gridWidth)
-        let row = Math.floor(this.touch.y / this.gridWidth)
-        this.touch.col = col
-        this.touch.row = row
+    if (!this.inAction) {
+      let col = Math.floor(this.touch.x / this.gridWidth)
+      let row = Math.floor(this.touch.y / this.gridWidth)
+      this.touch.col = col
+      this.touch.row = row
 
-        // 长按将某格清空
-        if (this.touch.end > this.touch.start + 650) {
-          this.sudoku.grids[col][row].setEmpty()
-          return
-        }
-
-        this.drawActionLayer(this.touch)
-        $('#debug').text(`x: ${col}, y: ${row}`)
-      } else {
-        // something
+      // 长按将某格清空
+      if (this.touch.end > this.touch.start + 650) {
+        this.sudoku.grids[col][row].setEmpty()
+        return
       }
-      
-      $(this.actLayer).toggleClass('active')
-      this.inAction = !this.inAction
+
+      this.drawActionLayer(this.touch)
+      $('#debug').text(`x: ${col}, y: ${row}`)
+    } else {
+      // something
     }
+
+    $(this.actLayer).toggleClass('active')
+    this.inAction = !this.inAction
   }
 
   // 设置游戏区域大小
@@ -209,8 +210,8 @@ const Main = () => {
     let game = new Game(wrap)
     game.init({
       shortcut: '', // 使用快捷方法生成数独
-      seed: 2,      // 随机生成一个数独并使用种子
-      empty: 20,    // 随机扣去空格数
+      seed: 2, // 随机生成一个数独并使用种子
+      empty: 20 // 随机扣去空格数
     })
 
     // 游戏区大小随动

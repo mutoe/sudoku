@@ -17,7 +17,10 @@ class Grid {
   /**
    * 将该格置空
    */
-  setEmpty() {}
+  setEmpty() {
+    if (this.readonly) return -1
+    this.value = null
+  }
 
   /**
    * 获取当前坐标所在宫格 0-8

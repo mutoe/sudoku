@@ -58,7 +58,7 @@ class Sudoku {
     /** @type {({col: Number, row: Number})[]} 剩余空格坐标 */
     this.emptyGrids = new Array(81)
 
-    /** @type {Node[][]} 游戏数据 */
+    /** @type {Grid[][]} 游戏数据 */
     this.grids = new Array(9)
     for (let i = 0; i < 9; i++) {
       this.grids[i] = new Array(9)
