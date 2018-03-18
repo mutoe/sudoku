@@ -2,9 +2,12 @@
 
 // 调试用全局变量
 window.MT = {
-  // 随机数种子
+  /**
+   * 随机数种子
+   * @param {Number} seed 种子
+   */
   random(seed) {
-    if (typeof seed !== 'number') return Math.random()
+    if (typeof seed !== 'number') throw new TypeError('seed must be a Number')
     else {
       seed = Math.sin(seed) * 10000
       return seed - Math.floor(seed)
@@ -20,6 +23,11 @@ window.MT = {
 
 // 数独类
 class Sudoku {
+  /**
+   * @constructor
+   * @param {String} shortcut
+   * 类似于 '2.314.2...12.' (shortcut.length = 81)
+   */
   constructor(shortcut) {
     // 初始化盘面
     this.initSudoku(shortcut)
@@ -130,7 +138,7 @@ class Sudoku {
 
   /**
    * 从完整数独中扣掉若干空格
-   * @param  {number} [count=36] 需要挖去的格子数
+   * @param  {Number} [count=36] 需要挖去的格子数
    */
   subtractGrids(count = 36) {
     // 如果游戏已经开始 则不能再扣取
@@ -151,7 +159,12 @@ class Sudoku {
     return this
   }
 
-  // 检查某格子剩余可填数字
+  /**
+   * 检查某格子剩余可填数字
+   * @param {Number} col 列坐标
+   * @param {Number} row 行坐标
+   * @return {Number[]} 所有可填数字
+   */
   checkGrid(col, row) {
     let existNums = []
     // 检查当前行
@@ -271,7 +284,13 @@ class Sudoku {
 
 // 宫格类
 class Grid {
-  constructor(col, row, value) {
+  /**
+   * 
+   * @param {Number} col 列坐标
+   * @param {Number} row 行坐标
+   * @param {Number} [value = null] 该列初始数值
+   */
+  constructor(col, row, value = null) {
     this.col = col
     this.row = row
     this.chunk = this.getChunk(col, row)

@@ -3,8 +3,8 @@
 class Node {
   /**
    * @constructor
-   * @param {number} x 节点的 x 坐标
-   * @param {number} y 节点的 y 坐标
+   * @param {Number} x 节点的 x 坐标
+   * @param {Number} y 节点的 y 坐标
    */
   constructor(x, y) {
     // 节点的 x y 坐标
@@ -45,7 +45,10 @@ class Node {
     this.d.u = this
   }
 
-  // 向左增加一个节点
+  /**
+   * 向左增加一个节点
+   * @param {Node} l 左节点
+   */
   set_l(l) {
     l.l = this.l
     l.r = this
@@ -53,7 +56,10 @@ class Node {
     this.l = l
   }
 
-  // 向上增加一个节点
+  /**
+   * 向上增加一个节点
+   * @param {Node} u 上节点
+   */
   set_u(u) {
     u.u = this.u
     u.d = this
@@ -75,7 +81,10 @@ class LinkedMatrix {
     this.cols = []
   }
 
-  // 隐藏列
+  /**
+   * 隐藏列
+   * @param {Number|Node} col 列节点或其 x 坐标
+   */
   cover_column(col) {
     if (typeof col === 'number') {
       col = this.cols[col]
@@ -96,7 +105,10 @@ class LinkedMatrix {
     }
   }
 
-  // 恢复列
+  /**
+   * 恢复列
+   * @param {Number|Node} col 列节点或其 x 坐标
+   */
   uncover_column(col) {
     if (typeof col === 'number') {
       col = this.cols[col]
@@ -141,7 +153,10 @@ class LinkedMatrix {
     return sparse
   }
 
-  // 从密集表示法的 0,1 矩阵创建十字链表
+  /**
+   * 从 0,1 矩阵创建十字链表
+   * @param {Number[][]} sparse 密集表示法的 0,1 矩阵数组
+   */
   from_sparse(sparse) {
     if (sparse == null) return null
     let lm = new LinkedMatrix()
@@ -185,7 +200,7 @@ let DLX = {
   /**
    * 求解
    * @param  {LinkedMatrix} lm  十字链表实例
-   * @return {number[][]}       结果
+   * @return {Number[][]}       结果
    */
   solve_linked_matrix(lm) {
     if (!(lm instanceof LinkedMatrix)) throw new TypeError('Argument is not a LinkedMatrix')
@@ -198,8 +213,8 @@ let DLX = {
   /**
    * dance
    * @param  {LinkedMatrix} lm      十字链表实例
-   * @param  {number[]} stack       答案栈
-   * @param  {number[][]} solutions 最优解数组
+   * @param  {Number[]} stack       答案栈
+   * @param  {Number[][]} solutions 最优解数组
    */
   dance (lm, stack, solutions) {
     if (lm == null) return []
