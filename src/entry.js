@@ -1,6 +1,6 @@
 // import stylesheet
 import './stylus/main.styl'
 
-import Main from './script/main.js'
+import Game from './script/Game.js'
 
-Main()
+Game()

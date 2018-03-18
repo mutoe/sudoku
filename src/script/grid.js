@@ -12,8 +12,12 @@ class Grid {
     this.chunk = this.getChunk(col, row)
     this.value = value // 值
     this.readonly = false // 只读
-    this.removable = true // 允许移除
   }
+
+  /**
+   * 将该格置空
+   */
+  setEmpty() {}
 
   /**
    * 获取当前坐标所在宫格 0-8

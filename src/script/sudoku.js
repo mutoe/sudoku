@@ -1,20 +1,41 @@
-import Grid from './grid'
-import DLX from './dlx'
-import util from './util.js'
+import Grid from './Grid'
+import DLX from './DLX'
+import RandomSeed from './RandomSeed'
 
-// 数独类
+/**
+ * 数独类
+ * @class
+ * @member {Boolean} [resolved = false] 数独已完成
+ * @member {Boolean} [begin = false]    已经开始游戏
+ * @member {Boolean} [invalid = null]   数独无解
+ * @member {Boolean} [uniqueAnswer = null] 数独有唯一解
+ * @member {Boolean} [mistakes = false] 盘面出错
+ * @member {({col: Number, row: Number})[]} emptyGrids 剩余空格坐标
+ */
 class Sudoku {
   /**
    * @constructor
-   * @param {String} shortcut
-   * 类似于 '2.314.2...12.' (shortcut.length = 81)
+   * @param {({seed: Number, empty: Number, shortcut: String})} options
    */
-  constructor(shortcut) {
+  constructor(options) {
+    this.options = options
+    // 初始化种子
+    this.rs = new RandomSeed(this.options.seed)
+
     // 初始化盘面
-    this.initSudoku(shortcut)
+    this.initSudoku(this.options.shortcut)
+
+    // 生成数独
+    this.generate()
+
+    return this
   }
 
-  // 初始化盘面
+  /**
+   * 初始化盘面
+   * @param {?String} shortcut
+   * 类似于 '2.314.2...12.' (shortcut.length = 81)
+   */
   initSudoku(shortcut) {
     if (shortcut) {
       if (shortcut.length !== 81)
@@ -24,7 +45,7 @@ class Sudoku {
       shortcut = undefined
     }
 
-    // 数独胜利
+    // 数独已完成
     this.resolved = false
     // 可以开始解题
     this.begin = !!shortcut
@@ -34,10 +55,10 @@ class Sudoku {
     this.uniqueAnswer = null
     // 盘面出错
     this.mistakes = false
-    // 空格坐标 Array<{col: Number, row: Number}>
+    /** @type {({col: Number, row: Number})[]} 剩余空格坐标 */
     this.emptyGrids = new Array(81)
 
-    // 盘面
+    /** @type {Node[][]} 游戏数据 */
     this.grids = new Array(9)
     for (let i = 0; i < 9; i++) {
       this.grids[i] = new Array(9)
@@ -53,8 +74,33 @@ class Sudoku {
     return this
   }
 
+  /**
+   * 生成数独
+   */
+  generate() {
+    do {
+      // 生成一个终盘
+      console.time('generate sudoku intact')
+      this.generateIntact()
+      console.timeEnd('generate sudoku intact')
+  
+      // 随机扣掉数字
+      console.time('subtract grids')
+      this.subtractGrids(this.options.empty)
+      console.timeEnd('subtract grids')
+  
+      console.time('try solve sudoku')
+      this.try()
+      console.timeEnd('try solve sudoku')
+    } while (this.invalid)
+
+    this.lock()
+
+    return this
+  }
+
   // 生成一个数独终盘
-  generateSudokuIntact() {
+  generateIntact() {
     if (this.begin) return this
     do {
       this.initSudoku()
@@ -64,7 +110,7 @@ class Sudoku {
         // 从第一行开始填，以此类推
         for (let j = 0; j < 9; j++) {
           // 每一行从一个随机的位置（列）开始
-          let seed = util.rand()
+          let seed = this.rs.rand()
           for (let l = 0; l < 36; l++) {
             let i = (l + seed) % 9
             // 如果当前格子不为空 跳过本列
@@ -114,24 +160,22 @@ class Sudoku {
         this.invalid = false
       }
     } while (this.invalid === true)
-
     return this
   }
 
   /**
    * 从完整数独中扣掉若干空格
-   * @param  {Number} [count=36] 需要挖去的格子数
    */
-  subtractGrids(count = 36) {
+  subtractGrids() {
     // 如果游戏已经开始 则不能再扣取
     if (this.begin) return this
     if (this.emptyGrids.length > 0) throw Error('无法从残缺盘面执行该方法')
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < this.options.empty; i++) {
       let row, col
       // 随机选格子 直到选中一个非空格
       do {
-        row = util.rand()
-        col = util.rand()
+        row = this.rs.rand()
+        col = this.rs.rand()
       } while (this.grids[col][row].value === null)
 
       // 挖去该格
@@ -218,23 +262,46 @@ class Sudoku {
    * 求解数独
    * 将数独问题转化为求解精确覆盖的问题 从而使用 DLX 算法进行高效求解
    */
-  solve() {
+  try() {
     let sparse = this.toSparse()
     let lm = new DLX.LinkedMatrix().from_sparse(sparse)
     let result = DLX.solve_linked_matrix(lm)
     if (result.length === 1) {
-      this.resolved = true
+      this.invalid = false
       this.uniqueAnswer = true
       console.log('Resolved.')
     } else if (result.length > 1) {
-      this.resoved = false
+      this.invalid = true
       this.uniqueAnswer = false
       console.log('Resolved. But not unique answer.')
     } else {
-      this.resolved = false
       this.invalid = true
+      this.resolved = false
       console.log('This is invalid sudoku.')
     }
+
+    return this
+  }
+
+  /**
+   * 锁定当前棋盘 准备开始游戏
+   */
+  lock() {
+    if (this.begin) throw new Error('已经开始的游戏无法锁定棋盘')
+    this.emptyGrids = []
+    for (let j = 0; j < 9; j++) {
+      for (let i = 0; i < 9; i++) {
+        let grid = this.grids[i][j]
+        if (grid.value) {
+          grid.readonly = true
+        } else {
+          grid.readonly = false
+          this.emptyGrids.push({ col: i, row: j })
+        }
+      }
+    }
+    this.resolved = false
+    this.begin = true
   }
 
   // 格式化输出当前盘面
@@ -253,11 +320,12 @@ class Sudoku {
       }
     }
     return {
+      options: this.options,
       resolved: this.resolved,
       invalid: this.invalid,
       mistakes: this.mistakes,
       shortcut,
-      data
+      data,
     }
   }
 }
