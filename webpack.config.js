@@ -12,8 +12,11 @@ module.exports = {
   },
   devtool: 'source-map',
   devServer: {
-    contentBase: './dist',
-    hot: true
+    contentBase: path.join(__dirname, 'dist'),
+    hot: true,
+    host: '0.0.0.0',
+    port: 3000,
+    open: true,
   },
   plugins: [
     new CleanWebpackPlugin(['dist']),
