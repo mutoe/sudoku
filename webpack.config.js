@@ -10,13 +10,13 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'js/bundle-[hash].js'
   },
-  devtool: 'source-map',
+  devtool: 'cheap-eval-source-map',
   devServer: {
     contentBase: path.join(__dirname, 'dist'),
     hot: true,
     host: '0.0.0.0',
     port: 3000,
-    open: true,
+    open: false
   },
   plugins: [
     new CleanWebpackPlugin(['dist']),
@@ -47,7 +47,7 @@ module.exports = {
           {
             loader: 'babel-loader',
             options: {
-              presets: ['env'],
+              presets: ['env']
             }
           }
         ]
@@ -60,9 +60,9 @@ module.exports = {
             'css-loader',
             {
               loader: 'postcss-loader',
-              options: { 
-                plugins: [ require('autoprefixer')() ],
-                sourceMap: 'inline', 
+              options: {
+                plugins: [require('autoprefixer')()],
+                sourceMap: true
               }
             },
             'stylus-loader'
