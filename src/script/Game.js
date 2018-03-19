@@ -25,45 +25,75 @@ class Game {
   onTouchMove(event) {
     event.preventDefault()
     this.touch.start = new Date().getTime()
-    this.actCtx.clearRect(0, 0, this.actLayer.height, this.actLayer.height)
     let touch = event.touches[0]
     let x = touch.pageX * this.ratio
     let y = (touch.pageY - this.wrap.offsetTop) * this.ratio
     this.touch.x = x
     this.touch.y = y
-
-    // 测试用标点
-    this.actCtx.beginPath()
-    this.actCtx.arc(x, y, 10, 0, 2 * Math.PI, true)
-    this.actCtx.fill()
-    this.actCtx.closePath()
   }
 
   onTouchEnd() {
     this.touch.end = new Date().getTime()
-    console.log(this.touch)
 
+    // 如果可交互
+    if (this.handleTouch()) {
+      $(this.actLayer).toggleClass('active')
+      this.inAction = !this.inAction
+    }
+  }
+
+  handleTouch() {
     if (!this.inAction) {
       let row = Math.floor(this.touch.y / this.gridWidth)
       let col = Math.floor(this.touch.x / this.gridWidth)
       this.touch.row = row
       this.touch.col = col
 
+      console.log(this.sudoku.grids[row][col].readonly)
+
+      // 如果该格为只读属性 中断操作
+      if (this.sudoku.grids[row][col].readonly) {
+        return false
+      }
+
       // 长按将某格清空
       if (this.touch.end > this.touch.start + 650) {
         this.sudoku.grids[row][col].setEmpty()
         console.log(`set grid[${row}][${col}] empty`)
-        return
+        
+        // refresh
+        this.drawDataLayer()
+        return false
       }
 
       this.drawActionLayer(this.touch)
       $('#debug').text(`r: ${row}, c: ${col}`)
     } else {
-      // something
+      // 获取当前点击位置相对于弹出窗口左上角的位置
+      let offsetX = this.touch.x - this.touch.offset.x
+      let offsetY = this.touch.y - this.touch.offset.y
+
+      // 点击弹出层以外的地方中断交互
+      let isOutsize =
+        offsetX < 0 ||
+        offsetX > 3 * this.gridWidth ||
+        offsetY < 0 ||
+        offsetY > 3 * this.gridWidth
+      if (isOutsize) return true
+
+      let col = Math.floor(offsetX / this.gridWidth)
+      let row = Math.floor(offsetY / this.gridWidth)
+      let value = row * 3 + col + 1
+
+      this.sudoku.grids[this.touch.row][this.touch.col].value = value
+
+      // refresh
+      this.drawDataLayer()
     }
 
-    $(this.actLayer).toggleClass('active')
-    this.inAction = !this.inAction
+    console.log(this.touch)
+
+    return true
   }
 
   // 设置游戏区域大小
@@ -105,9 +135,12 @@ class Game {
     this.datCtx.font = `${fontSize}px san-serif`
     this.datCtx.textAlign = 'center'
     this.datCtx.textBaseline = 'middle'
+    this.datCtx.save()
 
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
+        this.datCtx.restore()
+
         // 绘制边线
         this.datCtx.strokeRect(c * width, r * width, width, width)
 
@@ -116,16 +149,27 @@ class Game {
           Math.floor(r / 3) % 2 == Math.floor(c / 3) % 2 ? '#eee' : '#ddd'
         this.datCtx.fillRect(c * width, r * width, width, width)
 
-        // 绘制数字
-        if (this.sudoku.grids[r][c].value !== null) {
-          this.datCtx.fillStyle = '#666'
-          this.datCtx.fillText(
-            this.sudoku.grids[r][c].value,
-            c * width + width / 2,
-            r * width + width / 2,
-            width
-          )
+        // 获取当前格
+        let grid = this.sudoku.grids[r][c]
+
+        // 如果当前格没有填 跳过绘制
+        if (grid.value === null) continue
+
+        // 区分只读格和用户可填格
+        if (grid.readonly) {
+          this.datCtx.fillStyle = '#888'
+        } else {
+          this.datCtx.font = `san-serif bold ${fontSize + 12}px`
+          this.datCtx.fillStyle = '#282828'
         }
+
+        // 绘制数字
+        this.datCtx.fillText(
+          grid.value,
+          c * width + width / 2,
+          r * width + width / 2,
+          width
+        )
       }
     }
   }
@@ -135,11 +179,10 @@ class Game {
    * @param {Object|undefined} location {x: Number, y: Number} 触摸位置
    */
   drawActionLayer(location) {
-    // 如果没有传参则清空画布
-    if (location === undefined) {
-      this.actLayer.height = this.actLayer.height
-      return
-    }
+    // 清空画布
+    this.actLayer.height = this.actLayer.height
+
+    if (location === undefined) return
 
     const width = this.gridWidth
     const fontSize = Math.floor(this.gridWidth / 2)
@@ -153,6 +196,12 @@ class Game {
     }
     if (location.y > 6 * width) {
       location.y -= 3 * width
+    }
+
+    // 记录交互窗口左上角位置
+    this.touch.offset = {
+      x: location.x,
+      y: location.y
     }
 
     for (let r = 0; r < 3; r++) {

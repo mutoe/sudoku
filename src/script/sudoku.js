@@ -55,19 +55,16 @@ class Sudoku {
     this.uniqueAnswer = null
     // 盘面出错
     this.mistakes = false
-    /** @type {({col: Number, row: Number})[]} 剩余空格坐标 */
+    /** @type {({col: Number, row: Number, answer: Number})[]} 剩余空格坐标 */
     this.emptyGrids = new Array(81)
 
     /** @type {Grid[][]} 游戏数据 */
-    this.grids = new Array(9)
-    for (let r = 0; r < 9; r++) {
-      this.grids[r] = new Array(9)
-    }
+    this.grids = Array.from({ length: 9 }, () => new Array(9))
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         let value = 0
-        if (shortcut) value = shortcut.shift()
-        this.grids[r][c] = new Grid(r, c, value - 0 || null)
+        if (shortcut) value = Number(shortcut.shift())
+        this.grids[r][c] = new Grid(r, c, value || null)
       }
     }
 
@@ -78,7 +75,9 @@ class Sudoku {
    * 生成数独
    */
   generate() {
+    let timer = 0
     do {
+      timer++
       // 生成一个终盘
       console.time('generate sudoku intact')
       this.generateIntact()
@@ -92,7 +91,9 @@ class Sudoku {
       console.time('try solve sudoku')
       this.try()
       console.timeEnd('try solve sudoku')
-    } while (this.invalid)
+
+      console.warn('generate')
+    } while (this.invalid && timer < 100)
 
     this.lock()
 
@@ -102,7 +103,9 @@ class Sudoku {
   // 生成一个数独终盘
   generateIntact() {
     if (this.begin) return this
+    let timer = 0
     do {
+      timer++
       this.initSudoku()
 
       // 从数字 1 开始填，1 填完后开始填 2，以此类推
@@ -141,7 +144,8 @@ class Sudoku {
       } else {
         this.invalid = false
       }
-    } while (this.invalid === true)
+      console.warn('generateIntact')
+    } while (this.invalid === true && timer < 1000)
     return this
   }
 
@@ -151,16 +155,29 @@ class Sudoku {
   subtractGrids() {
     // 如果游戏已经开始 则不能再扣取
     if (this.begin) return this
-    if (this.emptyGrids.length > 0) throw Error('无法从残缺盘面执行该方法')
-    for (let i = 0; i < this.options.empty; i++) {
+
+    // 重置空格数组
+    this.emptyGrids = []
+
+    for (let i = this.options.empty; i > 0; i--) {
       let r, c
       // 随机选格子 直到选中一个非空格
+      let timer = 0
       do {
+        timer++
         r = this.rs.rand()
         c = this.rs.rand()
-      } while (this.grids[r][c].value === null)
+        console.warn('subtractGrids')
+      } while (this.grids[r][c].value === null && timer < 1000)
+
+      this.emptyGrids.push({
+        row: r,
+        col: c,
+        answer: this.grids[r][c].value
+      })
 
       // 挖去该格
+      this.grids[r][c].readonly = false
       this.grids[r][c].value = null
     }
 
@@ -233,18 +250,6 @@ class Sudoku {
    */
   lock() {
     if (this.begin) throw new Error('已经开始的游戏无法锁定棋盘')
-    this.emptyGrids = []
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        let grid = this.grids[r][c]
-        if (grid.value) {
-          grid.readonly = true
-        } else {
-          grid.readonly = false
-          this.emptyGrids.push({ row: r, col: c })
-        }
-      }
-    }
     this.resolved = false
     this.begin = true
   }
@@ -283,7 +288,7 @@ class Sudoku {
    */
   existInBox(box, value) {
     const startRow = Math.floor(box / 3) * 3
-    const startCol = box % 3 * 3
+    const startCol = (box % 3) * 3
     for (let r = startRow; r < startRow + 3; r++) {
       for (let c = startCol; c < startCol + 3; c++) {
         if (this.grids[r][c].value === value) return true
@@ -312,6 +317,7 @@ class Sudoku {
       resolved: this.resolved,
       invalid: this.invalid,
       mistakes: this.mistakes,
+      grids: this.grids,
       shortcut,
       data
     }

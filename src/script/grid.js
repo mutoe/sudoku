@@ -10,8 +10,8 @@ class Grid {
     this.col = col
     this.row = row
     this.box = Math.floor(row / 3) * 3 + Math.floor(col / 3)
-    this.value = value // 值
-    this.readonly = false // 只读
+    this.value = value    // 值
+    this.readonly = true  // 只读
   }
 
   /**
