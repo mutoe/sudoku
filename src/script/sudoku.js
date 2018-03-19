@@ -60,14 +60,14 @@ class Sudoku {
 
     /** @type {Grid[][]} 游戏数据 */
     this.grids = new Array(9)
-    for (let i = 0; i < 9; i++) {
-      this.grids[i] = new Array(9)
+    for (let r = 0; r < 9; r++) {
+      this.grids[r] = new Array(9)
     }
-    for (let j = 0; j < 9; j++) {
-      for (let i = 0; i < 9; i++) {
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
         let value = 0
         if (shortcut) value = shortcut.shift()
-        this.grids[i][j] = new Grid(i, j, value - 0 || null)
+        this.grids[r][c] = new Grid(r, c, value - 0 || null)
       }
     }
 
@@ -83,12 +83,12 @@ class Sudoku {
       console.time('generate sudoku intact')
       this.generateIntact()
       console.timeEnd('generate sudoku intact')
-  
+
       // 随机扣掉数字
       console.time('subtract grids')
       this.subtractGrids(this.options.empty)
       console.timeEnd('subtract grids')
-  
+
       console.time('try solve sudoku')
       this.try()
       console.timeEnd('try solve sudoku')
@@ -106,49 +106,31 @@ class Sudoku {
       this.initSudoku()
 
       // 从数字 1 开始填，1 填完后开始填 2，以此类推
-      for (let k = 1; k <= 9; k++) {
+      for (let v = 1; v <= 9; v++) {
         // 从第一行开始填，以此类推
-        for (let j = 0; j < 9; j++) {
+        for (let r = 0; r < 9; r++) {
           // 每一行从一个随机的位置（列）开始
           let seed = this.rs.rand()
-          for (let l = 0; l < 36; l++) {
-            let i = (l + seed) % 9
-            // 如果当前格子不为空 跳过本列
-            if (this.grids[i][j].value !== null) continue
+          for (let l = 0; l < 36; l += 4) {
+            let c = (l + seed) % 9
+            // 如果当前格存在数字 跳过本列
+            if (this.grids[r][c].value !== null) continue
 
-            // 本列允许填入标记
-            let enableFill = true
+            // 如果当前列 c 存在数字 v 跳过本列
+            if (this.existInCol(c, v)) continue
 
-            // 判断本列待填入数字是否冲突
-            for (let m = 0; m < 9; m++) {
-              if (this.grids[i][m].value == k) {
-                enableFill = false
-                break
-              }
-            }
+            // 如果当前宫 b 存在数字 v 跳过本列
+            let b = Grid.getBox(r, c) // 获取当前格所在宫索引
+            if (this.existInBox(b, v)) continue
 
-            // 如果不能填就跳过本列
-            if (!enableFill) continue
+            // 无冲突 可以将数字 v 填入当前宫
+            this.grids[r][c].value = v
 
-            // 判断当前宫待填入数字是否冲突
-            let chunk = new Grid().getChunk(i, j) // 位于第几宫 (0-8)
-            let startRow = Math.floor(chunk / 3) * 3
-            let startCol = (chunk % 3) * 3
-            for (let m = startCol; m < startCol + 3; m++) {
-              for (let n = startRow; n < startRow + 3; n++) {
-                if (this.grids[m][n].value == k) {
-                  enableFill = false
-                  break
-                }
-              }
-            }
+            // 将剩余空格数自减
+            this.emptyGrids.pop()
 
-            // 如果不冲突就填入
-            if (enableFill) {
-              this.grids[i][j].value = k
-              this.emptyGrids.pop()
-              break
-            }
+            // 跳出列循环 进入下一行
+            break
           }
         }
       }
@@ -171,55 +153,18 @@ class Sudoku {
     if (this.begin) return this
     if (this.emptyGrids.length > 0) throw Error('无法从残缺盘面执行该方法')
     for (let i = 0; i < this.options.empty; i++) {
-      let row, col
+      let r, c
       // 随机选格子 直到选中一个非空格
       do {
-        row = this.rs.rand()
-        col = this.rs.rand()
-      } while (this.grids[col][row].value === null)
+        r = this.rs.rand()
+        c = this.rs.rand()
+      } while (this.grids[r][c].value === null)
 
       // 挖去该格
-      this.grids[col][row].value = null
+      this.grids[r][c].value = null
     }
 
     return this
-  }
-
-  /**
-   * 检查某格子剩余可填数字
-   * @param {Number} col 列坐标
-   * @param {Number} row 行坐标
-   * @return {Number[]} 所有可填数字
-   */
-  checkGrid(col, row) {
-    let existNums = []
-    // 检查当前行
-    for (let i = 0; i < 9; i++) {
-      if (this.grids[i][row].value) {
-        existNums.push(this.grids[row][i].value)
-      }
-    }
-    // 检查当前列
-    for (let j = 0; j < 9; j++) {
-      if (this.grids[col][j].value) {
-        existNums.push(this.grids[col][j].value)
-      }
-    }
-    // 检查当前宫
-    let chunk = new Grid().getChunk(col, row) // 位于第几宫 (0-8)
-    let startRow = Math.floor(chunk / 3) * 3
-    let startCol = (chunk % 3) * 3
-    for (let i = startCol; i < startCol + 3; i++) {
-      for (let j = startRow; j < startRow + 3; j++) {
-        if (this.grids[i][j].value) {
-          existNums.push(this.grids[i][j].value)
-        }
-      }
-    }
-
-    // 返回所有可填数字
-    let result = [...new Set(existNums)]
-    return result.sort()
   }
 
   /**
@@ -230,26 +175,26 @@ class Sudoku {
   toSparse() {
     let sparse = []
     // 遍历数独的每格
-    for (let y = 0; y < 9; y++) {
-      for (let x = 0; x < 9; x++) {
-        let c = this.grids[x][y].chunk // 用索引 0-8 表示 1-9 宫
-        if (this.grids[x][y].value) {
-          // 如果读取到数字, 在矩阵中增加一行, 表示填写数字 n
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        let b = this.grids[r][c].box // 用索引 0-8 表示 1-9 宫
+        if (this.grids[r][c].value) {
+          // 如果读取到数字, 在矩阵中增加一行, 表示填写数字 v
           let row = []
-          let n = this.grids[x][y].value - 1 // 用索引 0-8 表示数字 1-9
-          row.push(0 * 81 + y * 9 + x) // 第 y 行第 x 列有数字
-          row.push(1 * 81 + x * 9 + n) // 第 x 列填 n
-          row.push(2 * 81 + y * 9 + n) // 第 y 行填 n
-          row.push(3 * 81 + c * 9 + n) // 第 c 宫填 n
+          let v = this.grids[r][c].value - 1 // 用索引 0-8 表示数字 1-9
+          row.push(0 * 81 + r * 9 + c) // 第 r 行第 c 列有数字
+          row.push(1 * 81 + c * 9 + v) // 第 c 列填 v
+          row.push(2 * 81 + r * 9 + v) // 第 r 行填 v
+          row.push(3 * 81 + b * 9 + v) // 第 b 宫填 v
           sparse.push(row)
         } else {
           // 如果没有读取到空格, 则增加 9 行, 表示 1-9 都试一试
-          for (let n = 0; n < 9; n++) {
+          for (let v = 0; v < 9; v++) {
             let row = []
-            row.push(0 * 81 + y * 9 + x)
-            row.push(1 * 81 + x * 9 + n)
-            row.push(2 * 81 + y * 9 + n)
-            row.push(3 * 81 + c * 9 + n)
+            row.push(0 * 81 + r * 9 + c)
+            row.push(1 * 81 + c * 9 + v)
+            row.push(2 * 81 + r * 9 + v)
+            row.push(3 * 81 + b * 9 + v)
             sparse.push(row)
           }
         }
@@ -289,14 +234,14 @@ class Sudoku {
   lock() {
     if (this.begin) throw new Error('已经开始的游戏无法锁定棋盘')
     this.emptyGrids = []
-    for (let j = 0; j < 9; j++) {
-      for (let i = 0; i < 9; i++) {
-        let grid = this.grids[i][j]
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        let grid = this.grids[r][c]
         if (grid.value) {
           grid.readonly = true
         } else {
           grid.readonly = false
-          this.emptyGrids.push({ col: i, row: j })
+          this.emptyGrids.push({ row: r, col: c })
         }
       }
     }
@@ -304,18 +249,61 @@ class Sudoku {
     this.begin = true
   }
 
+  /**
+   * 检查数字 value 是否存在与某列 col 中
+   * @param {Number} col 列索引
+   * @param {Number} value 待填入数字
+   * @return {Boolean}
+   */
+  existInCol(col, value) {
+    for (let r = 0; r < 9; r++) {
+      if (this.grids[r][col].value === value) return true
+    }
+    return false
+  }
+
+  /**
+   * 检查数字 value 是否存在与某行 row 中
+   * @param {Number} row 行索引
+   * @param {Number} value 待填入数字
+   * @return {Boolean}
+   */
+  existInRow(row, value) {
+    for (let c = 0; c < 9; c++) {
+      if (this.grids[row][c].value === value) return true
+    }
+    return true
+  }
+
+  /**
+   * 检查数字 value 是否存在与某宫 box 中
+   * @param {Number} box 宫索引
+   * @param {Number} value 待填入数字
+   * @return {Boolean}
+   */
+  existInBox(box, value) {
+    const startRow = Math.floor(box / 3) * 3
+    const startCol = box % 3 * 3
+    for (let r = startRow; r < startRow + 3; r++) {
+      for (let c = startCol; c < startCol + 3; c++) {
+        if (this.grids[r][c].value === value) return true
+      }
+    }
+    return false
+  }
+
   // 格式化输出当前盘面
   print() {
     let data = []
     let shortcut = ''
-    for (let i = 0; i < 9; i++) {
-      data[i] = []
-      for (let j = 0; j < 9; j++) {
-        if (!this.grids[j][i].value) {
+    for (let r = 0; r < 9; r++) {
+      data[r] = []
+      for (let c = 0; c < 9; c++) {
+        if (!this.grids[r][c].value) {
           shortcut += '.'
         } else {
-          shortcut += this.grids[j][i].value.toString()
-          data[i][j] = this.grids[j][i].value
+          shortcut += this.grids[r][c].value.toString()
+          data[r][c] = this.grids[r][c].value
         }
       }
     }
@@ -325,7 +313,7 @@ class Sudoku {
       invalid: this.invalid,
       mistakes: this.mistakes,
       shortcut,
-      data,
+      data
     }
   }
 }

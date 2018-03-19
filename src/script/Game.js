@@ -44,19 +44,20 @@ class Game {
     console.log(this.touch)
 
     if (!this.inAction) {
-      let col = Math.floor(this.touch.x / this.gridWidth)
       let row = Math.floor(this.touch.y / this.gridWidth)
-      this.touch.col = col
+      let col = Math.floor(this.touch.x / this.gridWidth)
       this.touch.row = row
+      this.touch.col = col
 
       // 长按将某格清空
       if (this.touch.end > this.touch.start + 650) {
-        this.sudoku.grids[col][row].setEmpty()
+        this.sudoku.grids[row][col].setEmpty()
+        console.log(`set grid[${row}][${col}] empty`)
         return
       }
 
       this.drawActionLayer(this.touch)
-      $('#debug').text(`x: ${col}, y: ${row}`)
+      $('#debug').text(`r: ${row}, c: ${col}`)
     } else {
       // something
     }
@@ -105,23 +106,23 @@ class Game {
     this.datCtx.textAlign = 'center'
     this.datCtx.textBaseline = 'middle'
 
-    for (let i = 0; i < 9; i++) {
-      for (let j = 0; j < 9; j++) {
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
         // 绘制边线
-        this.datCtx.strokeRect(i * width, j * width, width, width)
+        this.datCtx.strokeRect(c * width, r * width, width, width)
 
         // 填充色
         this.datCtx.fillStyle =
-          Math.floor(i / 3) % 2 == Math.floor(j / 3) % 2 ? '#eee' : '#ddd'
-        this.datCtx.fillRect(i * width, j * width, width, width)
+          Math.floor(r / 3) % 2 == Math.floor(c / 3) % 2 ? '#eee' : '#ddd'
+        this.datCtx.fillRect(c * width, r * width, width, width)
 
         // 绘制数字
-        if (this.sudoku.grids[i][j].value !== null) {
+        if (this.sudoku.grids[r][c].value !== null) {
           this.datCtx.fillStyle = '#666'
           this.datCtx.fillText(
-            this.sudoku.grids[i][j].value,
-            i * width + width / 2,
-            j * width + width / 2,
+            this.sudoku.grids[r][c].value,
+            c * width + width / 2,
+            r * width + width / 2,
             width
           )
         }
@@ -154,21 +155,21 @@ class Game {
       location.y -= 3 * width
     }
 
-    for (let j = 0; j < 3; j++) {
-      for (let i = 0; i < 3; i++) {
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
         // 绘制边线
         this.actCtx.strokeRect(
-          location.x + i * width,
-          location.y + j * width,
+          location.x + c * width,
+          location.y + r * width,
           width,
           width
         )
 
         // 填充色
-        this.actCtx.fillStyle = i % 2 == j % 2 ? '#eee' : '#ddd'
+        this.actCtx.fillStyle = c % 2 == r % 2 ? '#eee' : '#ddd'
         this.actCtx.fillRect(
-          location.x + i * width,
-          location.y + j * width,
+          location.x + c * width,
+          location.y + r * width,
           width,
           width
         )
@@ -176,9 +177,9 @@ class Game {
         // 绘制数字
         this.actCtx.fillStyle = '#282828'
         this.actCtx.fillText(
-          j * 3 + i + 1,
-          location.x + i * width + width / 2,
-          location.y + j * width + width / 2,
+          r * 3 + c + 1,
+          location.x + c * width + width / 2,
+          location.y + r * width + width / 2,
           width
         )
       }
