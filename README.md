@@ -1,5 +1,7 @@
 # Sudoku
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/mutoe/sudoku.svg)](https://greenkeeper.io/)
+
 数独, 一个前端学徒的练手作品.
 
 ## Introduction
