@@ -17,9 +17,9 @@ class Game {
     this.inAction = false
 
     // 交互监听
-    this.wrap.addEventListener('touchmove', this.onTouchMove.bind(this), false)
-    this.wrap.addEventListener('touchstart', this.onTouchMove.bind(this), false)
-    this.wrap.addEventListener('touchend', this.onTouchEnd.bind(this), false)
+    this.wrap.addEventListener('touchmove', () => this.onTouchMove(), false)
+    this.wrap.addEventListener('touchstart', () => this.onTouchMove(), false)
+    this.wrap.addEventListener('touchend', () => this.onTouchEnd(), false)
   }
 
   onTouchMove(event) {
@@ -60,7 +60,7 @@ class Game {
       if (this.touch.end > this.touch.start + 650) {
         this.sudoku.grids[row][col].setEmpty()
         console.log(`set grid[${row}][${col}] empty`)
-        
+
         // refresh
         this.drawDataLayer()
         return false

@@ -1,7 +1,6 @@
 const webpack = require('webpack')
 const path = require('path')
 const HTMLPlugin = require('html-webpack-plugin')
-const CleanWebpackPlugin = require('clean-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 
 module.exports = {
@@ -19,7 +18,6 @@ module.exports = {
     open: false
   },
   plugins: [
-    new CleanWebpackPlugin(['dist']),
     new HTMLPlugin({
       filename: 'index.html',
       template: 'src/index.pug',
@@ -31,9 +29,6 @@ module.exports = {
     }),
     new ExtractTextPlugin({
       filename: 'css/bundle.css'
-    }),
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('production')
     }),
     new webpack.HotModuleReplacementPlugin()
   ],
@@ -47,7 +42,7 @@ module.exports = {
           {
             loader: 'babel-loader',
             options: {
-              presets: ['env']
+              presets: ['@babel/preset-env']
             }
           }
         ]
