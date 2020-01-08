@@ -1,10 +1,9 @@
-const webpack = require('webpack')
 const path = require('path')
 const HTMLPlugin = require('html-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 
 module.exports = {
-  entry: './src/entry.js',
+  entry: './src/index.js',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'js/bundle-[hash].js'
@@ -22,55 +21,23 @@ module.exports = {
       filename: 'index.html',
       template: 'src/index.pug',
       inject: 'head'
-      // minify: {
-      //   removeComments: true,
-      //   collapseWhitespace: true
-      // }
     }),
     new ExtractTextPlugin({
-      filename: 'css/bundle.css'
+      filename: 'css/app.css'
     }),
-    new webpack.HotModuleReplacementPlugin()
   ],
   module: {
     rules: [
-      {
-        test: /\.js$/,
-        // exclude: /(node_modules|bower_components)/,
-        include: path.resolve(__dirname, 'src/'),
-        use: [
-          {
-            loader: 'babel-loader',
-            options: {
-              presets: ['@babel/preset-env']
-            }
-          }
-        ]
-      },
       {
         test: /\.styl$/,
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
           use: [
             'css-loader',
-            {
-              loader: 'postcss-loader',
-              options: {
-                plugins: [require('autoprefixer')()],
-                sourceMap: true
-              }
-            },
             'stylus-loader'
           ]
         })
       },
-      {
-        test: /\.pug$/,
-        use: [
-          'html-loader',
-          { loader: 'pug-html-loader', options: { pretty: true } }
-        ]
-      }
     ]
   }
 }

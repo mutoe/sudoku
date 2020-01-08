@@ -4,30 +4,23 @@
   "description": "a sudoku game for practicing programming.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --config webpack.config.js --progress --colors --display-reason --mode production",
-    "dev": "webpack-dev-server --mode development"
+    "build": "webpack --mode production",
+    "dev": "webpack-dev-server"
   },
   "keywords": [
     "sudoku",
     "game"
   ],
-  "author": "mutoe",
-  "license": "CC-BY-NC-SA-4.0",
-  "private": false,
-  "dependencies": {},
+  "author": "mutoe <mutoe@foxmail.com>",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "n-zepto": "^1.2.0"
+  },
   "devDependencies": {
-    "@babel/core": "^7.7.7",
-    "@babel/preset-env": "^7.7.7",
-    "autoprefixer": "^9.6.0",
-    "babel-loader": "^8.0.6",
     "css-loader": "^3.0.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
-    "html-loader": "^0.5.5",
     "html-webpack-plugin": "^3.0.6",
-    "n-zepto": "^1.2.0",
-    "postcss-loader": "^3.0.0",
-    "pug-html-loader": "^1.1.5",
     "style-loader": "^0.23.1",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",
