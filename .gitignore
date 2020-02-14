@@ -1,12 +1,13 @@
-
 # IDE
-/.vscode
+.vscode
+.idea
+*.iml
 
-# 包管理器
-/node_modules
+# dependencies
+node_modules
 
-# 发布目录
+# Built files
 /dist
 
-# 日志
+# Logs
 *.log
