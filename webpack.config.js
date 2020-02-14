@@ -12,7 +12,7 @@ module.exports = (env = {}) => ({
       publicPath: '/',
     },
     resolve: {
-      extensions: ['.vue', '.ts', '.tsx', '.js', '.jsx' ],
+      extensions: [ '.vue', '.ts', '.tsx', '.js', '.jsx' ],
       alias: {
         'vue': '@vue/runtime-dom',
       },
@@ -60,7 +60,18 @@ module.exports = (env = {}) => ({
               loader: MiniCssExtractPlugin.loader,
               options: { hmr: !env.prod },
             },
-            'css-loader'
+            'css-loader',
+          ],
+        },
+        {
+          test: /\.styl(us)?$/,
+          use: [
+            {
+              loader: MiniCssExtractPlugin.loader,
+              options: { hmr: !env.prod },
+            },
+            'css-loader',
+            'stylus-loader',
           ],
         },
       ],
