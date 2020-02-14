@@ -232,6 +232,15 @@ class Sudoku {
       this.invalid = false
       this.uniqueAnswer = true
       console.log('Resolved.')
+      const final = this.transformResultToSudoku(sparse, result[0])
+      let string = ''
+      final.forEach(r => {
+        r.forEach(c => {
+          string += `${c+1} `
+        })
+        string += '\n'
+      })
+      console.log(string);
     } else if (result.length > 1) {
       this.invalid = true
       this.uniqueAnswer = false
@@ -246,10 +255,33 @@ class Sudoku {
   }
 
   /**
+   * 根据稀疏矩阵和结果行推导出数独结果
+   * @param {Number[][]} sparse
+   * @param {Number[]} result
+   */
+  transformResultToSudoku(sparse, result) {
+    const sudoku = new Array(9).fill()
+    sudoku.forEach((v, i) => {
+      sudoku[i] = []
+    })
+    for (const rowNumber of result) {
+      const row = sparse[rowNumber]
+      const r = ~~(row[0] / 9)
+      const c = row[0] % 9
+      const v = row[1] % 9
+      sudoku[r][c] = v
+    }
+    return sudoku
+  }
+
+  /**
    * 锁定当前棋盘 准备开始游戏
    */
   lock() {
-    if (this.begin) throw new Error('已经开始的游戏无法锁定棋盘')
+    if (this.begin) {
+      console.log('已经开始的游戏无法锁定棋盘')
+      return
+    }
     this.resolved = false
     this.begin = true
   }

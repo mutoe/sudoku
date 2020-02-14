@@ -83,9 +83,7 @@ class Game {
 
       let col = Math.floor(offsetX / this.gridWidth)
       let row = Math.floor(offsetY / this.gridWidth)
-      let value = row * 3 + col + 1
-
-      this.sudoku.grids[this.touch.row][this.touch.col].value = value
+      this.sudoku.grids[this.touch.row][this.touch.col].value = row * 3 + col + 1
 
       // refresh
       this.drawDataLayer()
@@ -269,6 +267,7 @@ const Main = () => {
       game.setGamearea()
       game.drawDataLayer()
     })
+    window.game = game
   })
 }
 
