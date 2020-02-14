@@ -19,7 +19,7 @@ module.exports = {
   plugins: [
     new HTMLPlugin({
       filename: 'index.html',
-      template: 'src/index.pug',
+      template: 'src/index.html',
       inject: 'head'
     }),
     new ExtractTextPlugin({
