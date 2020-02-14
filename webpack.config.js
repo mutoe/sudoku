@@ -9,10 +9,10 @@ module.exports = (env = {}) => ({
     entry: path.resolve(__dirname, './src/main.ts'),
     output: {
       path: path.resolve(__dirname, './dist'),
-      publicPath: '/dist/',
+      publicPath: '/',
     },
     resolve: {
-      extensions: [ '.ts', '.tsx', '.js', '.jsx' ],
+      extensions: ['.vue', '.ts', '.tsx', '.js', '.jsx' ],
       alias: {
         'vue': '@vue/runtime-dom',
       },
