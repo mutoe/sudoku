@@ -1,8 +1,16 @@
 <template>
   <div class="game-area">
-    <div v-for="(row, rowIndex) in grids" class="row">
-      <div v-for="(col, colIndex) in row" :class="['col', {highlight: getTrunks(rowIndex, colIndex) % 2}]">
-        {{colIndex}}
+    <div
+      v-for="(row, rowIndex) in grids"
+      :key="rowIndex"
+      class="row"
+    >
+      <div
+        v-for="(col, colIndex) in row"
+        :key="colIndex"
+        :class="['col', {highlight: getTrunks(rowIndex, colIndex) % 2}]"
+      >
+        {{ colIndex }}
       </div>
     </div>
   </div>
@@ -21,7 +29,7 @@ export default {
   setup() {
     // construct 2D array
     const grids = reactive<number[][]>(new Array(9).fill([]))
-    grids.forEach((_, i) => grids[i] = new Array(9).fill(0))
+    grids.forEach((_, i) => (grids[i] = new Array(9).fill(0)))
 
     const getTrunks = (row: number, col: number) => ~~(row / 3) * 3 + ~~(col / 3)
 
