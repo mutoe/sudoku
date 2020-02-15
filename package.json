@@ -3,14 +3,13 @@
   "version": "0.2.0",
   "description": "a sudoku game for practicing programming.",
   "scripts": {
-    "dev": "webpack-dev-server",
-    "build": "webpack --env.prod"
+    "serve": "webpack-dev-server",
+    "build": "webpack --env.prod",
+    "eslint": "eslint 'src/**/*{.ts,.vue}'",
+    "stylelint": "stylelint 'src/**/*{.scss,.vue}'",
+    "lint": "npm run eslint && npm run stylelint",
+    "lint:fix": "npm run eslint -- --fix --quiet && npm run stylelint -- --fix"
   },
-  "keywords": [
-    "sudoku",
-    "game",
-    "vue3"
-  ],
   "author": "mutoe <mutoe@foxmail.com>",
   "license": "MIT",
   "private": true,
@@ -31,6 +30,7 @@
     "eslint-plugin-vue": "^6.1.2",
     "file-loader": "^5.0.2",
     "html-webpack-plugin": "^3.2.0",
+    "husky": "^4.2.3",
     "mini-css-extract-plugin": "^0.9.0",
     "sass": "^1.25.0",
     "sass-loader": "^8.0.2",
@@ -46,6 +46,11 @@
     "webpack": "^4.41.6",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.10.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint:fix"
+    }
   },
   "eslintConfig": {
     "root": true,
