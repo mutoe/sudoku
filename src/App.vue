@@ -28,26 +28,15 @@ export default {
 }
 </script>
 
-<style lang="scss">
-html, body {
-  margin: 0;
-  height: 100%
-}
-
-#app {
-  height: 100%
-}
-</style>
-
 <style lang="scss" scoped>
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: $primary;
+  height: 100vh;
   color: #fff;
-  height: 100%;
+  background-color: $primary;
 
   .info-wrap {
     text-align: center;

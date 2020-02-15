@@ -50,29 +50,29 @@ $border-color: lighten($primary, 40%);
   justify-content: space-around;
   width: 400px;
   height: 400px;
-  border-top: 1px solid $border-color;
-  border-left: 1px solid $border-color;
   margin: 12px 0;
   background-color: #fff;
+  border-top: 1px solid $border-color;
+  border-left: 1px solid $border-color;
 
   .row {
     display: flex;
     flex-direction: row;
     justify-content: space-around;
     height: 100%;
+  }
 
-    .col {
-      border-right: 1px solid $border-color;
-      border-bottom: 1px solid $border-color;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #000;
+  .col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    color: #000;
+    border-right: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
 
-      &.highlight {
-        background-color: lighten($primary, 78%);
-      }
+    &.highlight {
+      background-color: lighten($primary, 78%);
     }
   }
 }
