@@ -3,7 +3,7 @@ const { VueLoaderPlugin } = require('vue-loader')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
-module.exports = (env = {}) => ({
+module.exports = (env = { prod: false }) => ({
     mode: env.prod ? 'production' : 'development',
     devtool: env.prod ? 'source-map' : 'eval-cheap-module-source-map',
     entry: path.resolve(__dirname, './src/main.ts'),
@@ -12,9 +12,10 @@ module.exports = (env = {}) => ({
       publicPath: '/',
     },
     resolve: {
-      extensions: [ '.vue', '.ts', '.tsx', '.js', '.jsx' ],
+      extensions: [ '.ts', '.js' ],
       alias: {
         'vue': '@vue/runtime-dom',
+        '@': path.resolve('src'),
       },
     },
     devServer: {
@@ -64,14 +65,20 @@ module.exports = (env = {}) => ({
           ],
         },
         {
-          test: /\.styl(us)?$/,
+          test: /\.s[ac]ss$/,
           use: [
             {
               loader: MiniCssExtractPlugin.loader,
               options: { hmr: !env.prod },
             },
             'css-loader',
-            'stylus-loader',
+            'sass-loader',
+            {
+              loader: 'style-resources-loader',
+              options: {
+                patterns: [ './src/theme.scss' ],
+              },
+            },
           ],
         },
       ],
