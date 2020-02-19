@@ -73,7 +73,17 @@
         "error",
         "always-multiline"
       ],
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          "vars": "all",
+          "args": "after-used",
+          "ignoreRestSiblings": false
+        }
+      ],
       "@typescript-eslint/strict-boolean-expressions": "off",
+      "@typescript-eslint/restrict-template-expressions": "off",
       "vue/max-attributes-per-line": [
         "error",
         {

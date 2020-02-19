@@ -1,8 +1,9 @@
 <template>
-
   <div class="container">
     <header>
-      <h1 class="main-title">数独</h1>
+      <h1 class="main-title">
+        数独
+      </h1>
       <div class="info-wrap">
         <span><strong id="difficult">正常</strong> level <span id="level">1</span></span>
         <br>
@@ -10,20 +11,34 @@
       </div>
     </header>
 
-    <GameArea></GameArea>
-  </div>
+    <GameArea :game="game" />
 
+    <footer>
+      <button class="btn">
+        查错
+      </button>
+      <button class="btn">
+        重开
+      </button>
+    </footer>
+  </div>
 </template>
 
 <script lang="ts">
 import GameArea from './components/GameArea.vue'
+import Game from './class/Game'
 
 export default {
   components: {
     GameArea,
   },
-  setup() {
-    return {}
+  setup () {
+    const game = new Game()
+    window.game = game
+
+    return {
+      game,
+    }
   },
 }
 </script>
